@@ -1,4 +1,4 @@
-WORKSHOP_TITLE
+Leveraging and contributing to the the pharmaverse for clinical trial reporting in R
 ================
 
 ### posit::conf 2023
