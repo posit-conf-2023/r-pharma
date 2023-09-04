@@ -3,45 +3,30 @@ Leveraging and contributing to the the pharmaverse for clinical trial reporting 
 
 ### posit::conf 2023
 
-by INSTRUCTOR_NAME
+by Thomas Neitmann, Pawel Rucki, Ellis Hughes
 
 -----
 
-INSTRUCTIONS FOR INSTRUCTORS: Please insert information about your
-workshop below. Then, add workshop content in the materials folder and
-link to each session’s materials from the schedule below. You are
-welcomed to add more rows to the schedule. We just ask that you take
-breaks at the specified times. Once you are done adding information, you
-can remove these instructions from the README.
-
-Alternatively, you can completely redo the organization of this repo 
-as a Quarto website or some other format you prefer to host your workshop
-materials. The only requirement is that your workshop materials are hosted 
-here.
-
------
-
-:spiral_calendar: September 17 and 18, 2023  
-:alarm_clock:     09:00 - 17:00  
-:hotel:           ROOM TBD  
+:spiral_calendar: September 17 and 18, 2023
+:alarm_clock:     09:00 - 17:00
+:hotel:           ROOM TBD
 :writing_hand:    [pos.it/conf](http://pos.it/conf)
 
 -----
 
 ## Overview
 
-ADD ABSTRACT
+In this workshop we will introduce the pharmaverse, a collection of open source R packages that provide the next generation backbone for clinical trial reporting. As of March 2023, 123 people from more than 10 companies have contributed to the pharmaverse packages - and this workshop is about how you can both leverage their work to date and get involved to help evolve this important collection of efforts.
 
-**This workshop is for you if you...*
+We will create ADaM datasets, prepare tables and figures as well as interactive shiny apps. This course will also give a grounding in how to navigate pharmaverse R packages, and their repositories, and understand how you can contribute.
 
-ADD THREE POINTS
+You should take this workshop if you are interested in the future of clinical trial reporting, and would like to join this shift to between company collaboration.
 
 ## Prework
 
-ADD INFORMATION YOU WANT LEARNERS TO HAVE / STEPS THEY WANT THEM TO
-COMPLETE PRIOR TO THE WORKSHOP. THIS COULD BE A LINK TO A THREAD ON
-RSTUDIO COMMUNITY, PACKAGE INSTALL INSTRUCTIONS, HOW TO GET AN
-RSTUDIO.CLOUD ACCOUNT, ETC.
+- Create an account on [Posit Cloud](https://posit.cloud/)
+- Join [our space](https://posit.cloud/spaces/397259/join?access_code=rrxhlR4OnIpT1sflVPezGm4rLVUUk-WZhbruiTGC)
+- Open a project we have already created
 
 ## Schedule
 
@@ -57,21 +42,13 @@ RSTUDIO.CLOUD ACCOUNT, ETC.
 | 15:00 - 15:30 | *Coffee break*   |
 | 15:30 - 17:00 | Session 4        |
 
-### Day 2
+## Instructors
 
-| Time          | Activity         |
-| :------------ | :--------------- |
-| 09:00 - 10:30 | Session 1        |
-| 10:30 - 11:00 | *Coffee break*   |
-| 11:00 - 12:30 | Session 2        |
-| 12:30 - 13:30 | *Lunch break*    |
-| 13:30 - 15:00 | Session 3        |
-| 15:00 - 15:30 | *Coffee break*   |
-| 15:30 - 17:00 | Session 4        |
+Thomas Neitmann, Associate Director Data Science, Denali Therapeutics
 
-## Instructor
+Pawel Rucki, Chief Engineer (clinical insights codebase), Roche
 
-ADD INSTRUCTOR BIO
+Ellis Hughes, Data Science Leader, GSK
 
 -----
 
