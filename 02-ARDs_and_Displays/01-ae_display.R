@@ -36,7 +36,7 @@ big_n <- adsl %>%
 ## Layer By overriding AETERM and AEBODSYS to a standard value, get the unique
 ## number of participants, total number of AEs, and pct of population
 
-ard_ae_any <- adae %>%
+ae_ard_any <- adae %>%
   filter(SAFFL == "Y") %>%
   mutate(
     AETERM = "ANY BODY SYSTEM",
@@ -57,7 +57,7 @@ ard_ae_any <- adae %>%
 
 ## Now for every individual AE Body System/AE Term, get the same parameters
 
-ard_ae_all <- adae %>%
+ae_ard_all <- adae %>%
   filter(SAFFL == "Y") %>%
   group_by(TRT01A, AETERM, AEBODSYS) %>%
   summarize(
@@ -80,8 +80,8 @@ ard_ae_all <- adae %>%
 ## Finally create ordering columns for AETERM (AETERM_ORD) and ABODSYS (AEBODSYS_ORD)
 
 ae_ard_processed <- bind_rows(
-  ard_ae_any,
-  ard_ae_all
+  ae_ard_any,
+  ae_ard_all
   ) %>%
   mutate(
     ## define n (%) and total AE cols
@@ -143,7 +143,7 @@ ae_tfrmt <- ae_tfrmt %>%
         frmt_combine(
           "{N} ({N_pct})", ## combine the N and N_pct params into a single value
           N = frmt("XX"),
-          N_pct = frmt("x.x %", transform = ~.*100) ## percentages from ardis are out of 1, not 100
+          N_pct = frmt("x.x %", transform = ~.*100) ## percentages are from 0 to 1, not 100
         )
       ),
 
