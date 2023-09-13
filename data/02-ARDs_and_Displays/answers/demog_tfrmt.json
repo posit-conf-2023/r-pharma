@@ -1,0 +1,172 @@
+{
+  "group": ["var"],
+  "label": ["label"],
+  "param": ["param"],
+  "value": ["value"],
+  "column": ["TRT01A"],
+  "row_grp_plan": {
+    "struct_ls": [
+      {
+        "group_val": [".default"],
+        "block_to_apply": {
+          "post_space": [" "],
+          "border": ["outline", "bottom"]
+        }
+      }
+    ],
+    "label_loc": {
+      "location": ["column"],
+      "indent": ["  "]
+    }
+  },
+  "body_plan": [
+    {
+      "group_val": [".default"],
+      "label_val": [".default"],
+      "param_val": ["n", "pct"],
+      "frmt_combine": {
+        "expression": ["{n} {pct}"],
+        "frmt_ls": {
+          "n": {
+            "frmt": {
+              "expression": ["xxx"],
+              "missing": {},
+              "scientific": {},
+              "transform": {}
+            }
+          },
+          "pct": {
+            "frmt_when": {
+              "frmt_ls": {
+                "==1": [""],
+                "==0": [""],
+                "TRUE": {
+                  "frmt": {
+                    "expression": ["(xx.x %)"],
+                    "missing": {},
+                    "scientific": {},
+                    "transform": ["~. * 100"]
+                  }
+                }
+              },
+              "missing": {}
+            }
+          }
+        },
+        "missing": {}
+      }
+    },
+    {
+      "group_val": [".default"],
+      "label_val": ["n"],
+      "param_val": [".default"],
+      "frmt": {
+        "expression": ["xxx"],
+        "missing": {},
+        "scientific": {},
+        "transform": {}
+      }
+    },
+    {
+      "group_val": [".default"],
+      "label_val": ["Median"],
+      "param_val": [".default"],
+      "frmt": {
+        "expression": ["xxx.x"],
+        "missing": {},
+        "scientific": {},
+        "transform": {}
+      }
+    },
+    {
+      "group_val": [".default"],
+      "label_val": ["Min, Max"],
+      "param_val": ["Min", "Max"],
+      "frmt_combine": {
+        "expression": ["{Min}, {Max}"],
+        "frmt_ls": {
+          "Min": {
+            "frmt": {
+              "expression": ["xx.x"],
+              "missing": {},
+              "scientific": {},
+              "transform": {}
+            }
+          },
+          "Max": {
+            "frmt": {
+              "expression": ["xx.x"],
+              "missing": {},
+              "scientific": {},
+              "transform": {}
+            }
+          }
+        },
+        "missing": {}
+      }
+    },
+    {
+      "group_val": [".default"],
+      "label_val": ["Mean (SD)"],
+      "param_val": ["Mean", "SD"],
+      "frmt_combine": {
+        "expression": ["{Mean} ({SD})"],
+        "frmt_ls": {
+          "Mean": {
+            "frmt": {
+              "expression": ["xx.x"],
+              "missing": {},
+              "scientific": {},
+              "transform": {}
+            }
+          },
+          "SD": {
+            "frmt": {
+              "expression": ["xxx.xx"],
+              "missing": {},
+              "scientific": {},
+              "transform": {}
+            }
+          }
+        },
+        "missing": {}
+      }
+    },
+    {
+      "group_val": [".default"],
+      "label_val": ["Q1, Q3"],
+      "param_val": ["Q1", "Q3"],
+      "frmt_combine": {
+        "expression": ["{Q1} {Q3}"],
+        "frmt_ls": {
+          "Q1": {
+            "frmt": {
+              "expression": ["xx.x"],
+              "missing": {},
+              "scientific": {},
+              "transform": {}
+            }
+          },
+          "Q3": {
+            "frmt": {
+              "expression": ["xx.x"],
+              "missing": {},
+              "scientific": {},
+              "transform": {}
+            }
+          }
+        },
+        "missing": {}
+      }
+    }
+  ],
+  "col_style_plan": [
+    {
+      "cols": [
+        ["everything()"]
+      ],
+      "align": [".", ",", " "],
+      "width": {}
+    }
+  ]
+}

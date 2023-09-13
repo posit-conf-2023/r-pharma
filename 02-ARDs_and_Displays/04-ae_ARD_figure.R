@@ -16,13 +16,13 @@ ae_ard <- read_csv("data/02-ARDs_and_Displays/ae_ard.csv")
 
 # Create simple display
 ae_top_n <- ae_ard %>%
-  filter(AEBODSYS == AETERM) %>%
+  # filter(AEBODSYS != "ANY BODY SYSTEM") %>%
   group_by(AETERM) %>%
-  mutate(n_aes = sum(value[param == "n"])) %>%
+  mutate(n_aes = sum(value[param == "N_tot"])) %>%
   ungroup() %>%
-  arrange(desc(n_aes),AETERM, col1, param) %>%
+  arrange(desc(n_aes),AETERM, TRT01A, param) %>%
   filter(n_aes %in% unique(n_aes)[1:11]) %>%
-  select(-col2, -AETERM_ORD, -AEBODSYS_ORD) %>%
+  select(-sub_col_label, -AETERM_ORD, -AEBODSYS_ORD) %>%
   pivot_wider(
     names_from = param,
     values_from = value
@@ -31,12 +31,16 @@ ae_top_n <- ae_ard %>%
 
 ae_top_n %>%
   mutate(
-    AETERM = factor(AETERM, levels = unique(AETERM)),
-    IS_ANY = factor(ifelse(AETERM == "Any Body System", "Any Body System", "Top 10 AETERMS"), levels = c("Any Body System", "Top 10 AETERMS"))
+    TERM = case_when(
+      AETERM== "ANY BODY SYSTEM" ~ "Any Body System",
+      TRUE ~ paste0(AEBODSYS,": ", AETERM)
+      ),
+    TERM = factor(TERM, levels = unique(TERM)),
+    IS_ANY = factor(ifelse(TERM == "Any Body System", "Any Body System", "Top 10 AETERMS"), levels = c("Any Body System", "Top 10 AETERMS"))
   ) %>%
   ggplot() +
   geom_col(
-    aes(x = AETERM, y = n, fill = col1),
+    aes(x = TERM, y = N, fill = TRT01A),
     position = "dodge",
     stat = "identity"
   ) +
@@ -44,7 +48,7 @@ ae_top_n %>%
     title = "N Events by AETERM",
     subtitle = "Top 10 AETERMs by unique events for CDISC Pilot Data",
     x = NULL,
-    y = "N unique events"
+    y = "N Unique Events"
   ) +
   facet_grid(.~ IS_ANY, scales = "free", space = "free") +
   scale_x_discrete(labels = function(x) stringr::str_wrap(stringr::str_to_title(x), width = 15)) +

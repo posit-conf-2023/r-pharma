@@ -47,20 +47,27 @@ demog_tfrmt <- tfrmt(
       frmt("xxx")),
     frmt_structure(
       group_val = ".default",
-      label_val = c("Median", "Min","Max"),
+      label_val = c("Median"),
       frmt("xxx.x")),
     frmt_structure(
       group_val = ".default",
+      label_val = "Min, Max",
+      frmt_combine("{Min}, {Max}",
+                   Min = frmt("xx.x"),
+                   Max = frmt("xx.x"))
+    ),
+    frmt_structure(
+      group_val = ".default",
       label_val = "Mean (SD)",
-      frmt_combine("{mean} ({sd})",
-                   mean = frmt("xx.x"),
-                   sd = frmt("xxx.xx"))),
+      frmt_combine("{Mean} ({SD})",
+                   Mean = frmt("xx.x"),
+                   SD = frmt("xxx.xx"))),
     frmt_structure(
       group_val = ".default",
       label_val = "Q1, Q3",
-      frmt_combine("{q1} {q3}",
-                   q1 = frmt("xx.x"),
-                   q3 = frmt("xx.x")))
+      frmt_combine("{Q1} {Q3}",
+                   Q1 = frmt("xx.x"),
+                   Q3 = frmt("xx.x")))
   ),
 
   # Specify column styling plan

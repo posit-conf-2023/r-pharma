@@ -7,13 +7,12 @@ library(teal.code)
 library(teal.reporter)
 library(haven)
 library(dplyr)
-library(ardis)
+library(tidyr)
 library(tfrmt)
 library(gt)
 
 adsl <- read_xpt("data/02-ARDs_and_Displays/adsl.xpt")
-adae <- read_xpt("data/02-ARDs_and_Displays/adae.xpt") %>%
-  select(c("STUDYID", "USUBJID", "SUBJID"), !any_of(names(adsl)))
+adae <- read_xpt("data/02-ARDs_and_Displays/adae.xpt")
 
 app <- init(
   data = cdisc_data(
@@ -88,48 +87,87 @@ app <- init(
               )
           })
 
-          qenv_ae_ardis_r <- reactive({
+          qenv_ae_ard_big_n_r <- reactive({
+            
             qenv_r() %>%
               eval_code(
                 quote({
-                  ae_ardis <- ADAE %>%
-                    inner_join(ADSL) %>%
+                  ADSL %>%
                     filter(SAFFL == "Y") %>%
-                    ardis(treat_var = !!trt_var, where = SAFFL == "Y") %>%
-                    set_pop_data(ADSL)
-
-                  ae_ardis %>%
-                    add_layer(
-                      group_count(
-                        target_var = "Any Body System"
-                      ) %>%
-                        set_distinct_by(USUBJID) %>%
-                        set_summaries(
-                          "distinct_n"   = vars(distinct_n),
-                          "distinct_pct" = vars(distinct_pct),
-                          "n"            = vars(n)
-                        )
-                    )
-
-                  ae_ardis %>%
-                    add_layer(
-                      group_count(
-                        target_var = vars(!!ae_body_sys, !!ae_term)
-                      ) %>%
-                        set_distinct_by(USUBJID) %>%
-                        set_summaries(
-                          "distinct_n"   = vars(distinct_n),
-                          "distinct_pct" = vars(distinct_pct),
-                          "n"            = vars(n)
-                        )
+                    group_by(!!trt_va) %>%
+                    summarize(Big_N = length(unique(USUBJID))) %>%
+                    pivot_longer(cols = c(Big_N),
+                                 names_to = "param",
+                                 values_to = "value")
+                  })
+                )
+            
+          })
+          
+          qenv_ae_ard_any_r <- reactive({
+            
+            qenv_r() %>%
+              eval_code(
+                quote({
+                  
+                  big_n <- qenv_ae_ard_big_n_r()   
+            
+                  ADAE %>%
+                    filter(SAFFL == "Y") %>%
+                    mutate(
+                      !!ae_term := "ANY BODY SYSTEM",
+                      !!ae_body_sys := "ANY BODY SYSTEM"
+                    ) %>%
+                    group_by(!!trt_var, !!ae_term, !!ae_body_sys) %>%
+                    summarize(
+                      N = length(unique(USUBJID)), ## get total unique number of participants
+                      N_tot = n(), ## Get total number of entries
+                      N_pct = N/big_n[big_n[[trt_var]] == first(!!trt_var) & big_n$param == "Big_N", "value"][[1]],
+                      .groups = "drop"
+                    ) %>%
+                    pivot_longer(
+                      cols = c(N, N_tot, N_pct),
+                      names_to = "param",
+                      values_to = "value"
                     )
                 })
               )
           })
-
+          
+          qenv_ae_ard_all_r <- reactive({
+            qenv_r() %>%
+              eval_code(
+                quote({
+                  
+                  big_n <- qenv_ae_ard_big_n_r()   
+                  
+                  ADAE %>%
+                    filter(SAFFL == "Y") %>%
+                    group_by(!!trt_var, !!ae_term, !!ae_body_sys) %>%
+                    summarize(
+                      N = length(unique(USUBJID)),
+                      N_tot = n(),
+                      N_pct = N/big_n[big_n[[trt_var]] == first(!!trt_var) & big_n$param == "Big_N", "value"][[1]],
+                      .groups = "drop"
+                    ) %>%
+                    pivot_longer(
+                      cols = c(N, N_tot, N_pct),
+                      names_to = "param",
+                      values_to = "value"
+                    )
+                })
+              )
+            
+          })
+          
           qenv_ae_ard_r <- reactive({
-            qenv_ae_ardis_r() %>%
-              eval_code(quote(ae_ard <- build(ae_ardis)))
+            qenv_r() %>%
+              eval_code(quote(
+                ae_ard <- bind_rows(
+                  qenv_ae_ard_any_r(),
+                  qenv_ae_ard_all_r()
+                )
+              ))
           })
 
           quenv_ae_ard_processed_r <- reactive({
@@ -138,26 +176,15 @@ app <- init(
                 quote({
                   ae_ard_processed <- ae_ard %>%
                     mutate(
-                      row_label2 = case_when(
-                        row_label1 == "Any Body System" ~ row_label1,
-                        .default = row_label2,
-                      ),
-                      row_label3 = case_when(
-                        param %in% c("distinct_n", "distinct_pct") ~ "n_pct",
-                        param %in% c("n") ~ "n_aes"
+                      ## define n (%) and total AE cols
+                      sub_col_label  = case_when(
+                        param %in% c("N","N_pct") ~ 'N_and_N_pct',
+                        param %in% c("N_tot") ~ "AEs"
                       )
                     ) %>%
-                    rename(
-                      AEBODSYS = row_label1,
-                      AETERM = row_label2,
-                      col2 = row_label3
-                    ) %>%
                     mutate(
-                      AETERM_ORD = as.numeric(factor(AETERM, labels = unique(AETERM)))
-                    ) %>%
-                    group_by(AETERM) %>%
-                    mutate(
-                      AEBODSYS_ORD = as.numeric(factor(AEBODSYS, labels = unique(AEBODSYS)))
+                      AETERM_ORD = as.numeric(factor(AETERM, levels = unique(c("ANY BODY SYSTEM", unique(AETERM))))),
+                      AEBODSYS_ORD = as.numeric(factor(AEBODSYS, levels = unique(c("ANY BODY SYSTEM", unique(AEBODSYS)))))
                     ) %>%
                     ungroup()
                 })
@@ -169,14 +196,10 @@ app <- init(
               eval_code(
                 quote({
                   ae_ard_filtered <- ae_ard_processed %>%
-                    # filter(col1 != "Screen Failure") %>%
-                    group_by(col1) %>%
-                    mutate(drop_groups = all(is.na(value[param == "distinct_pct"]))) %>%
-                    ungroup() %>%
-                    filter(!drop_groups) %>%
+                    arrange(AETERM_ORD, AEBODSYS_ORD) %>%
                     group_by(AEBODSYS, AETERM) %>%
                     mutate(
-                      keep_groups = all(value[param == "distinct_pct"] > .05, na.rm = TRUE),
+                      keep_groups = any(value[param  == "N_pct"] > .05),
                     ) %>%
                     ungroup() %>%
                     filter(
@@ -193,10 +216,10 @@ app <- init(
                 substitute(
                   expr = {
                     ae_tfrmt <- tfrmt(
-                      group = AETERM,
-                      label = AEBODSYS,
+                      group = AEBODSYS,
+                      label = AETERM,
                       param = param,
-                      column = c(col1, col2),
+                      column = c(TRT01A, sub_col_label),
                       value = value,
                       sorting_cols = c(AETERM_ORD, AEBODSYS_ORD),
                       title = title,

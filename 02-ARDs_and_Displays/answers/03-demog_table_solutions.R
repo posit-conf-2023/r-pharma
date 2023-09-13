@@ -6,21 +6,27 @@
 library(dplyr)
 library(tfrmt)
 library(tfrmtbuilder)
+library(readr)
 
 # Load source demog ARD dataset ----
 
 demog_ard <- read_csv("data/02-ARDs_and_Displays/answers/demog_ard.csv")
+
+
+# Exercise 1 --------------------------------------------------------------
+
+## Lets generate our demog tfrmt. We have pre-populated most of it, but
+## we need to assign the group, label, column, param, and value variables.
+## Preview the head of demog_ard, and then fill in the variables
+
 head(demog_ard)
-
-
-# demog tfrmt Generation ----
 
 ## Initialize tfrmt
 
 demog_tfrmt <- tfrmt(
-  group = row_label2, ## What is the grouping variable
-  label = row_label1, ## What is the row label variable
-  column = col1, ## what is the column variable
+  group = var, ## What is the grouping variable
+  label = label, ## What is the row label variable
+  column = TRT01A , ## what is the column variable
   param = param, ## what is the param variable
   value = value, ## what is the value variable
 
@@ -41,20 +47,27 @@ demog_tfrmt <- tfrmt(
       frmt("xxx")),
     frmt_structure(
       group_val = ".default",
-      label_val = c("Median", "Min","Max"),
+      label_val = c("Median"),
       frmt("xxx.x")),
     frmt_structure(
       group_val = ".default",
+      label_val = "Min, Max",
+      frmt_combine("{Min}, {Max}",
+                   Min = frmt("xx.x"),
+                   Max = frmt("xx.x"))
+    ),
+    frmt_structure(
+      group_val = ".default",
       label_val = "Mean (SD)",
-      frmt_combine("{mean} ({sd})",
-                   mean = frmt("xx.x"),
-                   sd = frmt("xxx.xx"))),
+      frmt_combine("{Mean} ({SD})",
+                   Mean = frmt("xx.x"),
+                   SD = frmt("xxx.xx"))),
     frmt_structure(
       group_val = ".default",
       label_val = "Q1, Q3",
-      frmt_combine("{q1} {q3}",
-                   q1 = frmt("xx.x"),
-                   q3 = frmt("xx.x")))
+      frmt_combine("{Q1} {Q3}",
+                   Q1 = frmt("xx.x"),
+                   Q3 = frmt("xx.x")))
   ),
 
   # Specify column styling plan
@@ -73,7 +86,7 @@ demog_tfrmt <- tfrmt(
 ## Write to JSON
 
 demog_tfrmt %>%
-  tfrmt_to_json("/demog_tfrmt.json")
+  tfrmt_to_json("demog_tfrmt.json")
 
 
 # Exercise --------------------------------------------------------------

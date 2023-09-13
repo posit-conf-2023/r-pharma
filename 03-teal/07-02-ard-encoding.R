@@ -13,13 +13,12 @@ library(teal)
 library(teal.widgets)
 library(haven)
 library(dplyr)
-library(ardis)
+library(tidyr)
 library(tfrmt)
 library(gt)
 
 adsl <- read_xpt("data/02-ARDs_and_Displays/adsl.xpt")
-adae <- read_xpt("data/02-ARDs_and_Displays/adae.xpt") %>%
-  select(c("STUDYID", "USUBJID", "SUBJID"), !any_of(names(adsl)))
+adae <- read_xpt("data/02-ARDs_and_Displays/adae.xpt")
 
 app <- init(
   data = cdisc_data(
@@ -74,34 +73,59 @@ app <- init(
           trt_var_r <- reactive(as.name(input$trt_var))
           ae_body_sys_r <- reactive(as.name(input$ae_body_sys))
           ae_term_r <- reactive(as.name(input$ae_term))
-
-          ae_ardis_r <- reactive({
+          
+          
+          ae_ard_big_n_r <- reactive({
             adsl <- data$ADSL()
+            
+            ## add code here!
+            ## use: treat_var = !!trt_var_r()            
+            
+          })
+          
+          ae_ard_any_r <- reactive({
             adae <- data$ADAE()
 
             ## add code here!
+            ## use: ae_ard_big_n_r()
             ## use: treat_var = !!trt_var_r()
             ## use: target_var = vars(!!ae_body_sys_r(), !!ae_term_r())
+            
+            
+          })
+          
+          ae_ard_all_r <- reactive({
+            adae <- data$ADAE()
+            
+            ## add code here!
+            ## use: ae_ard_big_n_r()
+            ## use: treat_var = !!trt_var_r()
+            ## use: target_var = vars(!!ae_body_sys_r(), !!ae_term_r())
+            
           })
 
           ae_ard_r <- reactive({
             ## add code here!
-            ## use: ae_ardis_r()
+            ## use: ae_ard_any_r(), ae_ard_all_r()
+            
           })
 
           ae_ard_processed_r <- reactive({
             ## add code here!
             ## use: ae_ard_r()
+            
           })
 
           ae_ard_filtered_r <- reactive({
             ## add code here!
             ## use: ae_ard_processed_r()
+            
           })
 
           ae_tfrmt_r <- reactive({
             ## add code here!
             ## use: input$title, input$subtitle
+            
           })
 
           output$table <- render_gt({
@@ -130,13 +154,11 @@ library(teal)
 library(teal.widgets)
 library(haven)
 library(dplyr)
-library(ardis)
 library(tfrmt)
 library(gt)
 
 adsl <- read_xpt("data/02-ARDs_and_Displays/adsl.xpt")
-adae <- read_xpt("data/02-ARDs_and_Displays/adae.xpt") %>%
-  select(c("STUDYID", "USUBJID", "SUBJID"), !any_of(names(adsl)))
+adae <- read_xpt("data/02-ARDs_and_Displays/adae.xpt") 
 
 app <- init(
   data = cdisc_data(
@@ -191,85 +213,101 @@ app <- init(
           trt_var_r <- reactive(as.name(input$trt_var))
           ae_body_sys_r <- reactive(as.name(input$ae_body_sys))
           ae_term_r <- reactive(as.name(input$ae_term))
-
-          ae_ardis_r <- reactive({
+          
+          ae_ard_big_n_r <- reactive({
+            
             adsl <- data$ADSL()
-            adae <- data$ADAE()
-
-            ae_ardis <- adae %>%
-              inner_join(adsl) %>%
+            
+            adsl %>%
               filter(SAFFL == "Y") %>%
-              ardis(treat_var = !!trt_var_r(), where = SAFFL == "Y") %>%
-              set_pop_data(adsl)
-
-            ae_ardis %>%
-              add_layer(
-                group_count(
-                  target_var = "Any Body System"
-                ) %>%
-                  set_distinct_by(USUBJID) %>%
-                  set_summaries(
-                    "distinct_n"   = vars(distinct_n),
-                    "distinct_pct" = vars(distinct_pct),
-                    "n"            = vars(n)
-                  )
+              group_by(!!trt_var_r()) %>%
+              summarize(
+                Big_N = length(unique(USUBJID))
+              ) %>%
+              pivot_longer(
+                cols = c(Big_N),
+                names_to = "param",
+                values_to = "value"
               )
-
-            ae_ardis %>%
-              add_layer(
-                group_count(
-                  target_var = vars(!!ae_body_sys_r(), !!ae_term_r())
-                ) %>%
-                  set_distinct_by(USUBJID) %>%
-                  set_summaries(
-                    "distinct_n"   = vars(distinct_n),
-                    "distinct_pct" = vars(distinct_pct),
-                    "n"            = vars(n)
-                  )
+            
+          })
+          
+          ae_ard_any_r <- reactive({
+            adae <- data$ADAE()
+            big_n <- ae_ard_big_n_r()   
+            
+            adae %>%
+              filter(SAFFL == "Y") %>%
+              mutate(
+                !!ae_term_r() := "ANY BODY SYSTEM",
+                !!ae_body_sys_r() := "ANY BODY SYSTEM"
+              ) %>%
+              group_by(!!trt_var_r(), !!ae_term_r(), !!ae_body_sys_r()) %>%
+              summarize(
+                N = length(unique(USUBJID)), ## get total unique number of participants
+                N_tot = n(), ## Get total number of entries
+                N_pct = N/big_n[big_n[[trt_var_r()]] == first(!!trt_var_r()) & big_n$param == "Big_N", "value"][[1]],
+                .groups = "drop"
+              ) %>%
+              pivot_longer(
+                cols = c(N, N_tot, N_pct),
+                names_to = "param",
+                values_to = "value"
               )
+            
+          })
+          
+          ae_ard_all_r <- reactive({
+            adae <- data$ADAE()
+            big_n <- ae_ard_big_n_r()
+            
+            adae %>%
+              filter(SAFFL == "Y") %>%
+              group_by(!!trt_var_r(), !!ae_term_r(), !!ae_body_sys_r()) %>%
+              summarize(
+                N = length(unique(USUBJID)),
+                N_tot = n(),
+                N_pct = N/big_n[big_n[[trt_var_r()]] == first(!!trt_var_r()) & big_n$param == "Big_N", "value"][[1]],
+                .groups = "drop"
+              ) %>%
+              pivot_longer(
+                cols = c(N, N_tot, N_pct),
+                names_to = "param",
+                values_to = "value"
+              )
+            
           })
 
           ae_ard_r <- reactive({
-            build(ae_ardis_r())
+            bind_rows(
+              ae_ard_any_r(),
+              ae_ard_all_r()
+            )
           })
-
+          
           ae_ard_processed_r <- reactive({
             ae_ard_r() %>%
               mutate(
-                row_label2 = case_when(
-                  row_label1 == "Any Body System" ~ row_label1,
-                  .default = row_label2,
-                ),
-                row_label3 = case_when(
-                  param %in% c("distinct_n", "distinct_pct") ~ "n_pct",
-                  param %in% c("n") ~ "n_aes"
+                ## define n (%) and total AE cols
+                sub_col_label  = case_when(
+                  param %in% c("N","N_pct") ~ 'N_and_N_pct',
+                  param %in% c("N_tot") ~ "AEs"
                 )
               ) %>%
-              rename(
-                AEBODSYS = row_label1,
-                AETERM = row_label2,
-                col2 = row_label3
-              ) %>%
               mutate(
-                AETERM_ORD = as.numeric(factor(AETERM, labels = unique(AETERM)))
-              ) %>%
-              group_by(AETERM) %>%
-              mutate(
-                AEBODSYS_ORD = as.numeric(factor(AEBODSYS, labels = unique(AEBODSYS)))
+                AETERM_ORD = as.numeric(factor(AETERM, levels = unique(c("ANY BODY SYSTEM", unique(AETERM))))),
+                AEBODSYS_ORD = as.numeric(factor(AEBODSYS, levels = unique(c("ANY BODY SYSTEM", unique(AEBODSYS)))))
               ) %>%
               ungroup()
           })
 
           ae_ard_filtered_r <- reactive({
+            
             ae_ard_processed_r() %>%
-              # filter(col1 != "Screen Failure") %>%
-              group_by(col1) %>%
-              mutate(drop_groups = all(is.na(value[param == "distinct_pct"]))) %>%
-              ungroup() %>%
-              filter(!drop_groups) %>%
+              arrange(AETERM_ORD, AEBODSYS_ORD) %>%
               group_by(AEBODSYS, AETERM) %>%
               mutate(
-                keep_groups = all(value[param == "distinct_pct"] > .05, na.rm = TRUE),
+                keep_groups = any(value[param  == "N_pct"] > .05),
               ) %>%
               ungroup() %>%
               filter(
@@ -280,10 +318,10 @@ app <- init(
 
           ae_tfrmt_r <- reactive({
             tfrmt(
-              group = AETERM,
-              label = AEBODSYS,
+              group = AEBODSYS,
+              label = AETERM,
               param = param,
-              column = c(col1, col2),
+              column = c(TRT01A, sub_col_label),
               value = value,
               sorting_cols = c(AETERM_ORD, AEBODSYS_ORD),
               title = input$title,
