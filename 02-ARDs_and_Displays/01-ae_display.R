@@ -5,8 +5,8 @@
 
 #
 library(haven)
-library(ardis)
 library(dplyr)
+library(tidyr)
 library(tfrmt)
 library(gt)
 
@@ -14,89 +14,98 @@ library(gt)
 adae <- read_xpt("data/02-ARDs_and_Displays/adae.xpt")
 adsl <- read_xpt("data/02-ARDs_and_Displays/adsl.xpt")
 
-
 # AE ARD Generation ----
 
-## ardis implements ARDs in the form of a cake!
+## Get total number of participants
+big_n <- adsl %>%
+  filter(SAFFL == "Y") %>%
+  group_by(TRT01A) %>%
+  summarize(
+    Big_N = length(unique(USUBJID))
+  ) %>%
+  pivot_longer(
+    cols = c(Big_N),
+    names_to = "param",
+    values_to = "value"
+  )
+
+## Implement ARDs in the form of a cake!
 ## Add layers to build out your ARD!
 
-## Initialize ARD from data
+## Create an "Any Body System"
+## Layer By overriding AETERM and AEBODSYS to a standard value, get the unique
+## number of participants, total number of AEs, and pct of population
 
-ae_ardis <- adae %>%
+ae_ard_any <- adae %>%
   filter(SAFFL == "Y") %>%
-  ardis(treat_var = TRT01A, where = SAFFL == "Y") %>%
-  set_pop_data(adsl)
-
-## Create an "Any Body System" Layer
-## By not specifying the grouping, count each participant once
-
-ae_ardis %>%
-  add_layer(
-    group_count(
-      target_var = "Any Body System"
-      ) %>%
-      set_distinct_by(USUBJID) %>%
-      set_summaries(
-        "distinct_n"   = vars(distinct_n), # number of participants with an AE
-        "distinct_pct" = vars(distinct_pct), # percent of participants with an AE
-        "n"            = vars(n) # Total number of AEs
-      )
-  )
-
-## Now for every individual AE Body System/AE Term, get the total counts and
-## AE by participant
-
-ae_ardis %>%
-  add_layer(
-    group_count(
-      target_var = vars(AEBODSYS, AETERM)
-      ) %>%
-      set_distinct_by(USUBJID) %>%
-      set_summaries(
-        "distinct_n"   = vars(distinct_n), # number of participants with an AE
-        "distinct_pct" = vars(distinct_pct), # percent of participants with an AE
-        "n"            = vars(n) # Total number of AEs
-      )
-  )
-
-## Build ARD
-ae_ard <- ae_ardis %>%
-  build()
-
-## Post Processing ardis ARD to required format
-ae_ard_processed <- ae_ard %>%
   mutate(
-    ## Duplicate Any Body System now to
-    row_label2 = case_when(
-      row_label1 == "Any Body System" ~ row_label1,
-      .default = row_label2,
-    ),
+    AETERM = "ANY BODY SYSTEM",
+    AEBODSYS = "ANY BODY SYSTEM"
+  ) %>%
+  group_by(TRT01A, AETERM, AEBODSYS) %>%
+  summarize(
+    N = length(unique(USUBJID)), ## get total unique number of participants
+    N_tot = n(), ## Get total number of entries
+    N_pct = N/big_n[big_n$TRT01A == first(TRT01A) & big_n$param == "Big_N", "value"][[1]],
+    .groups = "drop"
+  ) %>%
+  pivot_longer(
+    cols = c(N, N_tot, N_pct),
+    names_to = "param",
+    values_to = "value"
+  )
+
+## Now for every individual AE Body System/AE Term, get the same parameters
+
+ae_ard_all <- adae %>%
+  filter(SAFFL == "Y") %>%
+  group_by(TRT01A, AETERM, AEBODSYS) %>%
+  summarize(
+    N = length(unique(USUBJID)),
+    N_tot = n(),
+    N_pct = N/big_n[big_n$TRT01A == first(TRT01A) & big_n$param == "Big_N", "value"][[1]],
+    .groups = "drop"
+  ) %>%
+  pivot_longer(
+    cols = c(N, N_tot, N_pct),
+    names_to = "param",
+    values_to = "value"
+  )
+
+## Post Processing ARD
+## Combine components together into usable format
+## because we want to combine parameters together, create `sub_col_label`
+## column defining "N_and_N_pct" as the combination of "N" and "N_pct"
+## and "AEs" as "N_tot"
+## Finally create ordering columns for AETERM (AETERM_ORD) and ABODSYS (AEBODSYS_ORD)
+
+ae_ard_processed <- bind_rows(
+  ae_ard_any,
+  ae_ard_all
+  ) %>%
+  mutate(
     ## define n (%) and total AE cols
-    row_label3 = case_when(
-      param %in% c("distinct_n","distinct_pct") ~ 'n_pct',
-      param %in% c("n") ~ 'n_aes'
+    sub_col_label  = case_when(
+      param %in% c("N","N_pct") ~ 'N_and_N_pct',
+      param %in% c("N_tot") ~ "AEs"
     )
   ) %>%
-  rename(
-    AEBODSYS = row_label1,
-    AETERM = row_label2,
-    col2 = row_label3
-  ) %>%
   mutate(
-    AETERM_ORD = as.numeric(factor(AETERM, labels = unique(AETERM)))
-  ) %>%
-  group_by(AETERM) %>%
-  mutate(
-    AEBODSYS_ORD = as.numeric(factor(AEBODSYS, labels = unique(AEBODSYS)))
+    AETERM_ORD = as.numeric(factor(AETERM, levels = c("ANY BODY SYSTEM", unique(adae$AETERM)))),
+    AEBODSYS_ORD = as.numeric(factor(AEBODSYS, levels = c("ANY BODY SYSTEM", unique(adae$AEBODSYS))))
   ) %>%
   ungroup()
 
+# Save ARD
+ae_ard_processed %>%
+  write_csv(file = "data/02-ARDs_and_Displays/answers/ae_ard.csv")
+
 ## Filter to remove cases where pct is less than 5% for all groups
 ae_ard_filtered <- ae_ard_processed %>%
-  filter(col1 != "Screen Failure") %>%
+  arrange(AETERM_ORD, AEBODSYS_ORD) %>%
   group_by(AEBODSYS, AETERM) %>%
   mutate(
-    keep_groups = all(value[param  == "distinct_pct"] > .05),
+    keep_groups = any(value[param  == "N_pct"] > .05),
   ) %>%
   ungroup() %>%
   filter(
@@ -110,10 +119,10 @@ ae_ard_filtered <- ae_ard_processed %>%
 
 ## From columns in ae_ard_processed, what are the basics
 ae_tfrmt <- tfrmt(
-  group = AETERM,
-  label = AEBODSYS,
+  group = AEBODSYS,
+  label = AETERM,
   param = param,
-  column = c(col1, col2),
+  column = c(TRT01A, sub_col_label),
   value = value,
   sorting_cols = c(AETERM_ORD, AEBODSYS_ORD),
   title = "AE Table for CDISC Pilot Data",
@@ -132,9 +141,9 @@ ae_tfrmt <- ae_tfrmt %>%
         group_val = ".default", # all groups
         label_val = ".default", # all labels
         frmt_combine(
-          "{distinct_n} ({distinct_pct})", ## combine the distinct_n and distinct_pct params into a single value
-          distinct_n = frmt("XX"),
-          distinct_pct = frmt("x.x %", transform = ~.*100) ## percentages from ardis are out of 1, not 100
+          "{N} ({N_pct})", ## combine the N and N_pct params into a single value
+          N = frmt("XX"),
+          N_pct = frmt("x.x %", transform = ~.*100) ## percentages are from 0 to 1, not 100
         )
       ),
 
@@ -142,7 +151,7 @@ ae_tfrmt <- ae_tfrmt %>%
       frmt_structure(
         group_val = ".default",  # all groups
         label_val = ".default", # all labels
-        n = frmt("[XXX]")
+        N_tot = frmt("[XXX]")
       )
     )
   )
@@ -152,7 +161,7 @@ print_to_gt(ae_tfrmt, .data = ae_ard_filtered)
 ## Define the row group plan
 ae_tfrmt <- ae_tfrmt %>%
   tfrmt(
-    row_grp_plan = row_grp_plan(label_loc = element_row_grp_loc(location = "indented")) ## indented is the default
+    row_grp_plan = row_grp_plan(label_loc = element_row_grp_loc(location="indented")) ## indented is the default
   )
 
 print_to_gt(ae_tfrmt, .data = ae_ard_filtered)
@@ -165,8 +174,8 @@ ae_tfrmt <- ae_tfrmt %>%
     col_plan = col_plan(
       ## For spanned columns we can define their order like this
       span_structure(
-        col1 = c(starts_with("Xanomeline"), Placebo),
-        col2 = c("n (%)" = `n_pct` , "[AEs]" = `n_aes`)
+        TRT01A = c(starts_with("Xanomeline"), Placebo),
+        sub_col_label = c("n (%)" = `N_and_N_pct` , "[AEs]" = `AEs`)
       ),
 
       ## Tidy select nomenclature works here!
@@ -185,13 +194,13 @@ ae_tfrmt <- ae_tfrmt %>%
 
       # Tidyselect semantics
       col_style_structure(
-        col = everything(), ## all columns
+        col = starts_with("Xanomeline"), ## all columns
         align = c("(","["), ## align on parenthesis and square braces
       ),
 
       # Another selection afterwards overrides previous styling
       col_style_structure(
-        col = span_structure(col1 = "Placebo"), ## all placebo columns
+        col = span_structure(TRT01A = "Placebo"), ## all placebo columns
         align = "right", ## align to right side of column
       )
     )
@@ -207,7 +216,6 @@ print_to_gt(ae_tfrmt, .data = ae_ard_filtered) %>%
   gtsave("ae_table.docx")
 
 ### Save the tfrmt as a json so we can potentially use it in the future.
-
 print_to_json(ae_tfrmt, "ae_tfrmt.json")
 
 
