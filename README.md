@@ -25,7 +25,7 @@ You should take this workshop if you are interested in the future of clinical tr
 ## Prework
 
 - Create an account on [Posit Cloud](https://posit.cloud/)
-- Join [our space](https://posit.cloud/spaces/397259/join?access_code=rrxhlR4OnIpT1sflVPezGm4rLVUUk-WZhbruiTGC)
+- Join [our space](https://posit.cloud/spaces/397259/join?access_code=v1QYZGBMTduRTPetsN6fPKsfH-wLN4Pl9b3ydlkY)
 - Open a project we have already created
 
 ## Schedule
