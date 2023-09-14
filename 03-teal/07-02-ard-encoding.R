@@ -51,18 +51,6 @@ app <- init(
               label = "Select treatment column",
               choices = c("ARM", "ARMCD", "TRT01A", "TRT01P"),
               selected = "TRT01A"
-            ),
-            selectInput(
-              ns("ae_body_sys"),
-              label = "Select AE Body System column",
-              choices = c("AEBODSYS", "AEBODSYS_2"),
-              selected = "AEBODSYS"
-            ),
-            selectInput(
-              ns("ae_term"),
-              label = "Select AE Term",
-              choices = c("AETERM", "AETERM_2"),
-              selected = "AETERM"
             )
           )
         )
@@ -71,61 +59,57 @@ app <- init(
         moduleServer(id, function(input, output, session) {
           # inputs
           trt_var_r <- reactive(as.name(input$trt_var))
-          ae_body_sys_r <- reactive(as.name(input$ae_body_sys))
-          ae_term_r <- reactive(as.name(input$ae_term))
-          
-          
+
+
           ae_ard_big_n_r <- reactive({
             adsl <- data$ADSL()
-            
+
             ## add code here!
-            ## use: treat_var = !!trt_var_r()            
-            
+            ## use: treat_var = !!trt_var_r()
+
           })
-          
+
           ae_ard_any_r <- reactive({
             adae <- data$ADAE()
 
             ## add code here!
             ## use: ae_ard_big_n_r()
             ## use: treat_var = !!trt_var_r()
-            ## use: target_var = vars(!!ae_body_sys_r(), !!ae_term_r())
-            
-            
+
           })
-          
+
           ae_ard_all_r <- reactive({
             adae <- data$ADAE()
-            
+
             ## add code here!
             ## use: ae_ard_big_n_r()
             ## use: treat_var = !!trt_var_r()
-            ## use: target_var = vars(!!ae_body_sys_r(), !!ae_term_r())
-            
+
           })
 
           ae_ard_r <- reactive({
             ## add code here!
             ## use: ae_ard_any_r(), ae_ard_all_r()
-            
+
           })
 
           ae_ard_processed_r <- reactive({
             ## add code here!
             ## use: ae_ard_r()
-            
+
           })
 
           ae_ard_filtered_r <- reactive({
             ## add code here!
             ## use: ae_ard_processed_r()
-            
+
           })
 
           ae_tfrmt_r <- reactive({
             ## add code here!
             ## use: input$title, input$subtitle
-            
+            ## use: column = vars(!!trt_var_r(), sub_col_label),
+
           })
 
           output$table <- render_gt({
@@ -158,7 +142,7 @@ library(tfrmt)
 library(gt)
 
 adsl <- read_xpt("data/02-ARDs_and_Displays/adsl.xpt")
-adae <- read_xpt("data/02-ARDs_and_Displays/adae.xpt") 
+adae <- read_xpt("data/02-ARDs_and_Displays/adae.xpt")
 
 app <- init(
   data = cdisc_data(
@@ -191,18 +175,6 @@ app <- init(
               label = "Select treatment column",
               choices = c("ARM", "ARMCD", "TRT01A", "TRT01P"),
               selected = "TRT01A"
-            ),
-            selectInput(
-              ns("ae_body_sys"),
-              label = "Select AE Body System column",
-              choices = c("AEBODSYS", "AEBODSYS_2"),
-              selected = "AEBODSYS"
-            ),
-            selectInput(
-              ns("ae_term"),
-              label = "Select AE Term",
-              choices = c("AETERM", "AETERM_2"),
-              selected = "AETERM"
             )
           )
         )
@@ -211,13 +183,10 @@ app <- init(
         moduleServer(id, function(input, output, session) {
           # inputs
           trt_var_r <- reactive(as.name(input$trt_var))
-          ae_body_sys_r <- reactive(as.name(input$ae_body_sys))
-          ae_term_r <- reactive(as.name(input$ae_term))
-          
+
           ae_ard_big_n_r <- reactive({
-            
             adsl <- data$ADSL()
-            
+
             adsl %>%
               filter(SAFFL == "Y") %>%
               group_by(!!trt_var_r()) %>%
@@ -229,20 +198,20 @@ app <- init(
                 names_to = "param",
                 values_to = "value"
               )
-            
+
           })
-          
+
           ae_ard_any_r <- reactive({
             adae <- data$ADAE()
-            big_n <- ae_ard_big_n_r()   
-            
+            big_n <- ae_ard_big_n_r()
+
             adae %>%
               filter(SAFFL == "Y") %>%
               mutate(
-                !!ae_term_r() := "ANY BODY SYSTEM",
-                !!ae_body_sys_r() := "ANY BODY SYSTEM"
+                AETERM = "ANY BODY SYSTEM",
+                AEBODSYS = "ANY BODY SYSTEM"
               ) %>%
-              group_by(!!trt_var_r(), !!ae_term_r(), !!ae_body_sys_r()) %>%
+              group_by(!!trt_var_r(), AETERM, AEBODSYS) %>%
               summarize(
                 N = length(unique(USUBJID)), ## get total unique number of participants
                 N_tot = n(), ## Get total number of entries
@@ -254,16 +223,16 @@ app <- init(
                 names_to = "param",
                 values_to = "value"
               )
-            
+
           })
-          
+
           ae_ard_all_r <- reactive({
             adae <- data$ADAE()
             big_n <- ae_ard_big_n_r()
-            
+
             adae %>%
               filter(SAFFL == "Y") %>%
-              group_by(!!trt_var_r(), !!ae_term_r(), !!ae_body_sys_r()) %>%
+              group_by(!!trt_var_r(), AETERM, AEBODSYS) %>%
               summarize(
                 N = length(unique(USUBJID)),
                 N_tot = n(),
@@ -275,7 +244,7 @@ app <- init(
                 names_to = "param",
                 values_to = "value"
               )
-            
+
           })
 
           ae_ard_r <- reactive({
@@ -284,7 +253,7 @@ app <- init(
               ae_ard_all_r()
             )
           })
-          
+
           ae_ard_processed_r <- reactive({
             ae_ard_r() %>%
               mutate(
@@ -302,7 +271,7 @@ app <- init(
           })
 
           ae_ard_filtered_r <- reactive({
-            
+
             ae_ard_processed_r() %>%
               arrange(AETERM_ORD, AEBODSYS_ORD) %>%
               group_by(AEBODSYS, AETERM) %>%
@@ -321,7 +290,7 @@ app <- init(
               group = AEBODSYS,
               label = AETERM,
               param = param,
-              column = c(TRT01A, sub_col_label),
+              column = vars(!!trt_var_r(), sub_col_label),
               value = value,
               sorting_cols = c(AETERM_ORD, AEBODSYS_ORD),
               title = input$title,

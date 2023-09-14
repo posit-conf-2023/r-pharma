@@ -45,18 +45,6 @@ app <- init(
               label = "Select treatment column",
               choices = c("ARM", "ARMCD", "TRT01A", "TRT01P"),
               selected = "TRT01A"
-            ),
-            selectInput(
-              ns("ae_body_sys"),
-              label = "Select AE Body System column",
-              choices = c("AEBODSYS", "AEBODSYS_2"),
-              selected = "AEBODSYS"
-            ),
-            selectInput(
-              ns("ae_term"),
-              label = "Select AE Term",
-              choices = c("AETERM", "AETERM_2"),
-              selected = "AETERM"
             )
           ),
           forms = verbatim_popup_ui(ns("rcode"), "Show R code")
@@ -64,61 +52,50 @@ app <- init(
       },
       server = function(id, data, reporter) {
         moduleServer(id, function(input, output, session) {
-          # inputs
-          trt_var_r <- reactive(as.name(input$trt_var))
-          ae_body_sys_r <- reactive(as.name(input$ae_body_sys))
-          ae_term_r <- reactive(as.name(input$ae_term))
-
           qenv_r <- reactive({
             new_qenv(tdata2env(data), code = get_code_tdata(data)) %>%
               eval_code(
                 substitute(
                   expr = {
                     trt_var <- as.name(x)
-                    ae_body_sys <- as.name(y)
-                    ae_term <- as.name(z)
                   },
                   env = list(
-                    x = input$trt_var,
-                    y = input$ae_body_sys,
-                    z = input$ae_term
+                    x = input$trt_var
                   )
                 )
               )
           })
 
           qenv_ae_ard_big_n_r <- reactive({
-            
             qenv_r() %>%
               eval_code(
                 quote({
-                  ADSL %>%
+                  big_n <- ADSL %>%
                     filter(SAFFL == "Y") %>%
-                    group_by(!!trt_va) %>%
-                    summarize(Big_N = length(unique(USUBJID))) %>%
-                    pivot_longer(cols = c(Big_N),
-                                 names_to = "param",
-                                 values_to = "value")
-                  })
-                )
-            
+                    group_by(!!trt_var) %>%
+                    summarize(
+                      Big_N = length(unique(USUBJID))
+                    ) %>%
+                    pivot_longer(
+                      cols = c(Big_N),
+                      names_to = "param",
+                      values_to = "value"
+                    )
+                })
+              )
           })
-          
+
           qenv_ae_ard_any_r <- reactive({
-            
-            qenv_r() %>%
+            qenv_ae_ard_big_n_r() %>%
               eval_code(
                 quote({
-                  
-                  big_n <- qenv_ae_ard_big_n_r()   
-            
-                  ADAE %>%
+                  ae_ard_any <- ADAE %>%
                     filter(SAFFL == "Y") %>%
                     mutate(
-                      !!ae_term := "ANY BODY SYSTEM",
-                      !!ae_body_sys := "ANY BODY SYSTEM"
+                      AETERM = "ANY BODY SYSTEM",
+                      AEBODSYS = "ANY BODY SYSTEM"
                     ) %>%
-                    group_by(!!trt_var, !!ae_term, !!ae_body_sys) %>%
+                    group_by(!!trt_var, AETERM, AEBODSYS) %>%
                     summarize(
                       N = length(unique(USUBJID)), ## get total unique number of participants
                       N_tot = n(), ## Get total number of entries
@@ -133,17 +110,14 @@ app <- init(
                 })
               )
           })
-          
+
           qenv_ae_ard_all_r <- reactive({
-            qenv_r() %>%
+            qenv_ae_ard_any_r() %>%
               eval_code(
                 quote({
-                  
-                  big_n <- qenv_ae_ard_big_n_r()   
-                  
-                  ADAE %>%
+                  ae_ard_all <- ADAE %>%
                     filter(SAFFL == "Y") %>%
-                    group_by(!!trt_var, !!ae_term, !!ae_body_sys) %>%
+                    group_by(!!trt_var, AETERM, AEBODSYS) %>%
                     summarize(
                       N = length(unique(USUBJID)),
                       N_tot = n(),
@@ -157,20 +131,20 @@ app <- init(
                     )
                 })
               )
-            
+
           })
-          
+
           qenv_ae_ard_r <- reactive({
-            qenv_r() %>%
+            qenv_ae_ard_all_r() %>%
               eval_code(quote(
                 ae_ard <- bind_rows(
-                  qenv_ae_ard_any_r(),
-                  qenv_ae_ard_all_r()
+                  ae_ard_any,
+                  ae_ard_all
                 )
               ))
           })
 
-          quenv_ae_ard_processed_r <- reactive({
+          qenv_ae_ard_processed_r <- reactive({
             qenv_ae_ard_r() %>%
               eval_code(
                 quote({
@@ -191,8 +165,8 @@ app <- init(
               )
           })
 
-          quenv_ae_ard_filtered_r <- reactive({
-            quenv_ae_ard_processed_r() %>%
+          qenv_ae_ard_filtered_r <- reactive({
+            qenv_ae_ard_processed_r() %>%
               eval_code(
                 quote({
                   ae_ard_filtered <- ae_ard_processed %>%
@@ -210,8 +184,8 @@ app <- init(
               )
           })
 
-          quenv_ae_tfrmt_r <- reactive({
-            new_qenv() %>%
+          qenv_ae_tfrmt_r <- reactive({
+            qenv_r() %>%
               eval_code(
                 substitute(
                   expr = {
@@ -219,7 +193,7 @@ app <- init(
                       group = AEBODSYS,
                       label = AETERM,
                       param = param,
-                      column = c(TRT01A, sub_col_label),
+                      column = vars(!!trt_var, sub_col_label),
                       value = value,
                       sorting_cols = c(AETERM_ORD, AEBODSYS_ORD),
                       title = title,
@@ -234,9 +208,9 @@ app <- init(
               )
           })
 
-          quenv_gt_table <- reactive({
-            quenv_ae_ard_filtered_r() %>%
-              join(quenv_ae_tfrmt_r()) %>%
+          qenv_gt_table <- reactive({
+            qenv_ae_ard_filtered_r() %>%
+              join(qenv_ae_tfrmt_r()) %>%
               eval_code(
                 quote({
                   x <- print_to_gt(ae_tfrmt, .data = ae_ard_filtered)
@@ -245,7 +219,7 @@ app <- init(
           })
 
           gt_table <- reactive({
-            quenv_gt_table()[["x"]]
+            qenv_gt_table()[["x"]]
           })
 
           output$table <- render_gt({
@@ -254,7 +228,7 @@ app <- init(
 
           verbatim_popup_srv(
             id = "rcode",
-            verbatim_content = reactive(get_code(quenv_gt_table())),
+            verbatim_content = reactive(get_code(qenv_gt_table())),
             title = "R Code"
           )
 
@@ -263,8 +237,8 @@ app <- init(
             # please see ?teal.reporter::ReportCard for other append_ methods
             card$append_text("My plot", "header2")
             # card$append_html(as_raw_html(gt_table()))  ## <- not yet supported :(
-            card$append_table(quenv_ae_ard_filtered_r()[["ae_ard_filtered"]])
-            card$append_rcode(paste0(get_code(qenv_r()), collapse = "\n"))
+            card$append_table(qenv_ae_ard_filtered_r()[["ae_ard_filtered"]])
+            card$append_rcode(paste0(get_code(qenv_ae_ard_filtered_r()), collapse = "\n"))
             if (!comment == "") {
               card$append_text("Comment", "header3")
               card$append_text(comment)
