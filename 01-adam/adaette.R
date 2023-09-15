@@ -29,7 +29,6 @@ ds <- convert_blanks_to_na(ds)
 metacore <- spec_to_metacore("specs.xlsx", where_sep_sheet = FALSE)
 
 # Get the specifications for the dataset we are currently building
-
 adtte_spec <- metacore %>%
   select_dataset("ADTTE")
 
@@ -88,10 +87,5 @@ adaette %>%
   drop_unspec_vars(adtte_spec) %>% # only keep vars from define
   order_cols(adtte_spec) %>% # order columns based on define
   set_variable_labels(adtte_spec) %>% # apply variable labels based on define
-  # xportr_type(adtte_spec, "ADTTE") %>%
-  # xportr_length(adtte_spec, "ADTTE") %>%
-  # unresolved issue in xportr_length due to:
-  # https://github.com/tidyverse/haven/issues/699
-  # no difference found by diffdf after commenting out xportr_length()
-  xportr_format(mutate_at(adtte_spec$var_spec, c("format"), ~ tidyr::replace_na(., "")), "ADTTE") %>%
+  xportr_format(adtte_spec) %>% # apply SAS formats
   xportr_write("data/adaette.xpt", label = "AE Time To 1st Derm. Event Analysis")

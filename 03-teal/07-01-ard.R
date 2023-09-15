@@ -11,7 +11,7 @@ library(tfrmt)
 library(gt)
 
 adsl <- read_xpt("data/02-ARDs_and_Displays/adsl.xpt")
-adae <- read_xpt("data/02-ARDs_and_Displays/adae.xpt") 
+adae <- read_xpt("data/02-ARDs_and_Displays/adae.xpt")
 
 app <- init(
   data = cdisc_data(
@@ -27,44 +27,48 @@ app <- init(
       },
       server = function(id, data) {
         moduleServer(id, function(input, output, session) {
-          
+
           ae_ard_big_n_r <- reactive({
             adsl <- data$ADSL()
             ## add code here!
-            
+
           })
-          
+
           ae_ard_any_r <- reactive({
             adae <- data$ADAE()
             ## add code here!
-            ## use: ae_ard_big_n_r() 
-            
+            ## use: ae_ard_big_n_r()
+
           })
-          
+
           ae_ard_all_r <- reactive({
             adae <- data$ADAE()
             ## add code here!
             ## use: ae_ard_big_n_r()
 
           })
-          
+
           ae_ard_r <- reactive({
             ## add code here!
-            ## use: ard_ae_any_r(), ard_ae_all_r()
+            ## use: ae_ard_any_r(), ae_ard_all_r()
+
           })
 
           ae_ard_processed_r <- reactive({
             ## add code here!
             ## use: ae_ard_r()
+
           })
 
           ae_ard_filtered_r <- reactive({
             ## add code here!
             ## use: ae_ard_processed_r()
+
           })
 
           ae_tfrmt_r <- reactive({
             ## add code here!
+
           })
 
           output$table <- render_gt({
@@ -97,7 +101,7 @@ library(tfrmt)
 library(gt)
 
 adsl <- read_xpt("data/02-ARDs_and_Displays/adsl.xpt")
-adae <- read_xpt("data/02-ARDs_and_Displays/adae.xpt") 
+adae <- read_xpt("data/02-ARDs_and_Displays/adae.xpt")
 
 app <- init(
   data = cdisc_data(
@@ -113,11 +117,10 @@ app <- init(
       },
       server = function(id, data) {
         moduleServer(id, function(input, output, session) {
-          
+
           ae_ard_big_n_r <- reactive({
-            
             adsl <- data$ADSL()
-            
+
             adsl %>%
               filter(SAFFL == "Y") %>%
               group_by(TRT01A) %>%
@@ -129,13 +132,12 @@ app <- init(
                 names_to = "param",
                 values_to = "value"
               )
-            
           })
-          
+
           ae_ard_any_r <- reactive({
             adae <- data$ADAE()
-            big_n <- ae_ard_big_n_r()   
-            
+            big_n <- ae_ard_big_n_r()
+
             adae %>%
               filter(SAFFL == "Y") %>%
               mutate(
@@ -154,13 +156,12 @@ app <- init(
                 names_to = "param",
                 values_to = "value"
               )
-            
           })
-          
+
           ae_ard_all_r <- reactive({
             adae <- data$ADAE()
             big_n <- ae_ard_big_n_r()
-            
+
             adae %>%
               filter(SAFFL == "Y") %>%
               group_by(TRT01A, AETERM, AEBODSYS) %>%
@@ -175,16 +176,15 @@ app <- init(
                 names_to = "param",
                 values_to = "value"
               )
-            
           })
-          
+
           ae_ard_r <- reactive({
             bind_rows(
               ae_ard_any_r(),
               ae_ard_all_r()
             )
           })
-          
+
           ae_ard_processed_r <- reactive({
             ae_ard_r() %>%
               mutate(
