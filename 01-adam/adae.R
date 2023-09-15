@@ -18,10 +18,7 @@ ae <- read_xpt("data/ae.xpt")
 # character values from SAS appear as "" characters in R, instead of appearing
 # as NA values. Further details can be obtained via the following link:
 # https://pharmaverse.github.io/admiral/cran-release/articles/admiral.html#handling-of-missing-values # nolint
-
 ae <- convert_blanks_to_na(ae)
-ex <- convert_blanks_to_na(ex_single)
-
 
 # Derivations ----
 
@@ -82,7 +79,7 @@ adae <- adae %>%
     trt_end_date = TRTEDT,
     end_window = 30
   ) %>%
-  ## Derive Customized Query 01
+  ## Derive Customized Query 01 ----
   mutate(
     CQ01NAM = if_else(
       str_detect(AEDECOD, "APPLICATION|DERMATITIS|ERYTHEMA|BLISTER|SKIN AND SUBCUTANEOUS TISSUE DISORDERS") &
@@ -99,7 +96,8 @@ adae <- adae %>%
       order = exprs(ASTDT, AESEQ),
       new_var = AOCC01FL,
       mode = "first"
-    ), filter = TRTEMFL == "Y" & CQ01NAM == "DERMATOLOGIC EVENTS"
+    ),
+    filter = TRTEMFL == "Y" & CQ01NAM == "DERMATOLOGIC EVENTS"
   )
 
 # Join all ADSL with AE
