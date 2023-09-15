@@ -219,3 +219,6 @@ print_to_gt(ae_tfrmt, .data = ae_ard_filtered) %>%
 print_to_json(ae_tfrmt, "ae_tfrmt.json")
 
 
+## Check out the json in tfrmtbuilder
+tfrmtbuilder::tfrmtbuilder()
+
