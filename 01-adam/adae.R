@@ -25,7 +25,7 @@ ae <- convert_blanks_to_na(ae)
 # Get list of ADSL vars required for derivations
 adsl_vars <- exprs(TRTSDT, TRTEDT, DTHDT, EOSDT)
 
-adae <- ae %>%
+adae1 <- ae %>%
   # join adsl to ae
   derive_vars_merged(
     dataset_add = adsl,
@@ -67,7 +67,7 @@ adae <- ae %>%
     trunc_out = FALSE
   )
 
-adae <- adae %>%
+adae2 <- adae1 %>%
   ## Derive severity / causality / ... ----
   mutate(
     ASEV = AESEV,
@@ -101,11 +101,11 @@ adae <- adae %>%
   )
 
 # Join all ADSL with AE
-adae <- adae %>%
+adae_final <- adae2 %>%
   derive_vars_merged(
     dataset_add = select(adsl, !!!negate_vars(adsl_vars)),
     by_vars = exprs(STUDYID, USUBJID)
   )
 
 # Save output ----
-xportr_write(adae, "data/adae.xpt")
+xportr_write(adae_final, "data/adae.xpt")
