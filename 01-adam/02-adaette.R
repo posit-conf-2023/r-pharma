@@ -29,8 +29,8 @@ ds <- convert_blanks_to_na(ds)
 metacore <- spec_to_metacore("specs.xlsx", where_sep_sheet = FALSE)
 
 # Get the specifications for the dataset we are currently building
-adtte_spec <- metacore %>%
-  select_dataset("ADTTE")
+adaette_spec <- metacore %>%
+  select_dataset("ADAETTE")
 
 # First dermatological event (ADAE.AOCC01FL = 'Y' and ADAE.CQ01NAM != '') ----
 event <- event_source(
@@ -84,8 +84,8 @@ adaette <- derive_param_tte(
   )
 
 adaette %>%
-  drop_unspec_vars(adtte_spec) %>% # only keep vars from define
-  order_cols(adtte_spec) %>% # order columns based on define
-  set_variable_labels(adtte_spec) %>% # apply variable labels based on define
-  xportr_format(adtte_spec) %>% # apply SAS formats
+  drop_unspec_vars(adaette_spec) %>% # only keep vars from define
+  order_cols(adaette_spec) %>% # order columns based on define
+  set_variable_labels(adaette_spec) %>% # apply variable labels based on define
+  xportr_format(adaette_spec) %>% # apply SAS formats
   xportr_write("data/adaette.xpt", label = "AE Time To 1st Derm. Event Analysis")
