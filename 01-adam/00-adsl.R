@@ -11,12 +11,12 @@ library(stringr)
 library(xportr)
 
 # Load source datasets ----
-dm <- read_xpt("data/dm.xpt")
-ds <- read_xpt("data/ds.xpt")
-ex <- read_xpt("data/ex.xpt")
-ae <- read_xpt("data/ae.xpt")
-lb <- read_xpt("data/lb.xpt")
-vs <- read_xpt("data/vs.xpt")
+dm <- read_xpt("./data/dm.xpt")
+ds <- read_xpt("./data/ds.xpt")
+ex <- read_xpt("./data/ex.xpt")
+ae <- read_xpt("./data/ae.xpt")
+lb <- read_xpt("./data/lb.xpt")
+vs <- read_xpt("./data/vs.xpt")
 
 # When SAS datasets are imported into R using haven::read_sas(), missing
 # character values from SAS appear as "" characters in R, instead of appearing
@@ -241,6 +241,5 @@ adsl <- adsl %>%
     DOMAIN = NULL
   )
 
-
 # Save output ----
-xportr_write(adsl, "data/adsl.xpt")
+xportr_write(adsl, "./data/adsl.xpt")

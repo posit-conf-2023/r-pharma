@@ -11,8 +11,8 @@ library(stringr)
 library(xportr)
 
 # Load source datasets ----
-adsl <- read_xpt("data/adsl.xpt")
-ae <- read_xpt("data/ae.xpt")
+adsl <- read_xpt("./data/adsl.xpt")
+ae <- read_xpt("./data/ae.xpt")
 
 # When SAS datasets are imported into R using haven::read_sas(), missing
 # character values from SAS appear as "" characters in R, instead of appearing
@@ -108,4 +108,4 @@ adae_final <- adae2 %>%
   )
 
 # Save output ----
-xportr_write(adae_final, "data/adae.xpt")
+xportr_write(adae_final, "./data/adae.xpt")

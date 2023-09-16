@@ -12,9 +12,9 @@ library(metatools)
 library(xportr)
 
 # Load source datasets ----
-adsl <- read_xpt("data/adsl.xpt")
-adae <- read_xpt("data/adae.xpt")
-ds <- read_xpt("data/ds.xpt")
+adsl <- read_xpt("./data/adsl.xpt")
+adae <- read_xpt("./data/adae.xpt")
+ds <- read_xpt("./data/ds.xpt")
 
 # When SAS datasets are imported into R using haven::read_sas(), missing
 # character values from SAS appear as "" characters in R, instead of appearing
@@ -88,4 +88,4 @@ adaette %>%
   order_cols(adaette_spec) %>% # order columns based on define
   set_variable_labels(adaette_spec) %>% # apply variable labels based on define
   xportr_format(adaette_spec) %>% # apply SAS formats
-  xportr_write("data/adaette.xpt", label = "AE Time To 1st Derm. Event Analysis")
+  xportr_write("./data/adaette.xpt", label = "AE Time To 1st Derm. Event Analysis")
