@@ -216,7 +216,7 @@ print_to_gt(ae_tfrmt, .data = ae_ard_filtered) %>%
   gtsave("ae_table.docx")
 
 ### Save the tfrmt as a json so we can potentially use it in the future.
-print_to_json(ae_tfrmt, "ae_tfrmt.json")
+tfrmt_to_json(ae_tfrmt, "ae_tfrmt.json")
 
 
 ## Check out the json in tfrmtbuilder
